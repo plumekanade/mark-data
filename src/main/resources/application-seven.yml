@@ -1,0 +1,3 @@
+server:
+  port: 10016
+subPath: 7

@@ -1,0 +1,3 @@
+server:
+  port: 10014
+subPath: 5
