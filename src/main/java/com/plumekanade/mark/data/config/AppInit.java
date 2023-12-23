@@ -8,8 +8,6 @@ import com.plumekanade.mark.data.entity.*;
 import com.plumekanade.mark.data.enums.CompanyRosterSourceEnum;
 import com.plumekanade.mark.data.service.*;
 import com.plumekanade.mark.data.vo.ResultMsg;
-import com.plumekanade.marker.data.entity.*;
-import com.plumekanade.marker.data.service.*;
 import com.plumekanade.mark.data.utils.MapperUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -19,7 +17,6 @@ import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.io.File;
 import java.util.*;
@@ -46,7 +43,6 @@ public class AppInit implements ApplicationRunner {
     private final List<String> longKeys = new ArrayList<>(Arrays.asList("companyName", "engName", "creditCode", "companyType", "manageState", "establishDate", "verifyDate", "legalName", "registerCapital", "realCapital", "insureNum", "companySize", "businessScope", "registerAddress", "businessTerm", "source", "taxpayerCode", "businessRegisterCode", "organizationCode", "contactPhone", "email", "taxpayerCredential", "previousName", "province", "city", "district", "url", "industry", "firstClassify", "secondClassify", "thirdClassify", "registrar", "lon", "lat"));
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public void run(ApplicationArguments args) throws Exception {
         // 八方数据合并到名单库
         threadTaskExecutor.submit(() -> {
@@ -219,6 +215,23 @@ public class AppInit implements ApplicationRunner {
         });
     }
 
+    /** 处理马克数据合并到名单库 */
+    public void handleMarkMerge(List<MarkerCompanyData> markRosters) {
+        List<CompanyRoster> rosters = new ArrayList<>();
+        for (MarkerCompanyData markRoster : markRosters) {
+            CompanyRoster companyRoster = new CompanyRoster(markRoster.getCompanyName(), markRoster.getCreditCode(), markRoster.getManageState(), markRoster.getUrl(), markRoster.getContactPhone(), "", "", markRoster.getRegisterAddress(), markRoster.getCompanySize(), markRoster.getBusinessScope());
+            companyRoster.setMarkProps(markRoster);
+            rosters.add(companyRoster);
+        }
+        boolean flag = companyRosterService.saveBatch(rosters);
+        if (flag) {
+            List<CompanyRosterSource> list = new ArrayList<>(rosters.size());
+            rosters.forEach(item -> list.add(new CompanyRosterSource(item.getId(), CompanyRosterSourceEnum.MARK)));
+            companyRosterSourceService.saveBatch(list);
+        } else {
+            log.error("【马克数据】批量合并失败, 数据库添加结果为 false, 未出现异常");
+        }
+    }
 
     /**
      * 拆分100条/次

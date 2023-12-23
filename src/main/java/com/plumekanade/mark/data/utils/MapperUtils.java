@@ -31,6 +31,8 @@ import java.time.format.DateTimeFormatter;
 public class MapperUtils {
 
   private static final ObjectMapper MAPPER = new ObjectMapper();
+  public static final DateTimeFormatter DF = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+  public static final DateTimeFormatter DTF = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
   static {
     // 在序列化时日期格式默认为 yyyy-MM-dd HH:mm:ss
@@ -47,15 +49,14 @@ public class MapperUtils {
     MAPPER.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
 
     JavaTimeModule dateTimeModule = new JavaTimeModule();
-    DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    dateTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(dtf));
-    dateTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(dtf));
+    dateTimeModule.addSerializer(LocalDateTime.class, new LocalDateTimeSerializer(DTF));
+    dateTimeModule.addDeserializer(LocalDateTime.class, new LocalDateTimeDeserializer(DTF));
     MAPPER.registerModule(dateTimeModule).registerModule(new ParameterNamesModule());
 
     JavaTimeModule dateModule = new JavaTimeModule();
-    DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-    dateModule.addSerializer(LocalDate.class, new LocalDateSerializer(df));
-    dateModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(df));
+
+    dateModule.addSerializer(LocalDate.class, new LocalDateSerializer(DF));
+    dateModule.addDeserializer(LocalDate.class, new LocalDateDeserializer(DF));
     MAPPER.registerModule(dateModule).registerModule(new ParameterNamesModule());
   }
 

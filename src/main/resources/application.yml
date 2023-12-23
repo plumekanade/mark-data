@@ -28,7 +28,7 @@ mybatis-plus:
     banner: false
     db-config:
       # 自增
-      id-type: assign_id
+      id-type: auto
       # 大写转下划线
       table-underline: true
       # 插入以及更新策略

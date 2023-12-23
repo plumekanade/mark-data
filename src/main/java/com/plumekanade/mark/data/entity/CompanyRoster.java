@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.plumekanade.mark.data.utils.MapperUtils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -27,6 +28,8 @@ public class CompanyRoster implements Serializable {
     private String id;
     /** 企业名称 */
     private String name;
+    /** 企业英文名称 */
+    private String engName;
     /** 统一社会信用代码 */
     private String creditCode;
     /** 企业网址（官网） */
@@ -63,6 +66,8 @@ public class CompanyRoster implements Serializable {
     private String classify;
     /** 注册资本 */
     private String regCapital;
+    /** 实缴资本 */
+    private String realCapital;
     /** 成立日期 */
     private LocalDate establishDate;
     /** 公司规模 */
@@ -93,6 +98,10 @@ public class CompanyRoster implements Serializable {
     private String mainProductServe;
     /** 工商注册号 */
     private String businessRegCode;
+    /** 组织机构代码 */
+    private String organizationCode;
+    /** 纳税人识别号 */
+    private String taxpayerCode;
     /** 经营状态（八方数据需要判断经营状态manage_state和登记状态registration_state，一个空就用另一个） */
     private String manageState;
     /** 住所 */
@@ -107,6 +116,32 @@ public class CompanyRoster implements Serializable {
     private String businessScope;
     /** 简介 */
     private String profile;
+    /** 所属省份 */
+    private String province;
+    /** 所属城市 */
+    private String city;
+    /** 所属区县 */
+    private String district;
+    /** 纳税人资质 */
+    private String taxpayerCredential;
+    /** 参保人数 */
+    private String insureNum;
+    /** 曾用名 */
+    private String previousName;
+    /** 邮箱 */
+    private String email;
+    /** 所属行业 */
+    private String industry;
+    /** 一级行业分类 */
+    private String firstClassify;
+    /** 二级行业分类 */
+    private String secondClassify;
+    /** 三级行业分类 */
+    private String thirdClassify;
+    /** 经度 */
+    private String lon;
+    /** 纬度 */
+    private String lat;
     /** 是否注册17网，0否 1是 */
     private Integer regState;
     /** 数据更新时间 */
@@ -182,7 +217,7 @@ public class CompanyRoster implements Serializable {
         this.regCapital = StringUtils.isNotBlank(companyRoster.getRegCapital()) ? companyRoster.getRegCapital() : companyRoster.getRegisterCapital();
         String date = StringUtils.isNotBlank(companyRoster.getBuildDate()) ? companyRoster.getBuildDate() : companyRoster.getEstablishDate();
         if (StringUtils.isNotBlank(date)) {
-            this.establishDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            this.establishDate = LocalDate.parse(date, MapperUtils.DF);
         }
         this.companySize = companyRoster.getStaffNum();
         this.manageSystemAuth = companyRoster.getManageSystemAuth();
@@ -202,5 +237,38 @@ public class CompanyRoster implements Serializable {
         this.registrar = companyRoster.getRegistrar();
         this.approvalDate = companyRoster.getApprovalDate();
         this.profile = companyRoster.getProfile();
+    }
+
+    public void setMarkProps(MarkerCompanyData markData) {
+        this.engName = markData.getEngName();
+        this.approvalDate = markData.getVerifyDate();
+        this.legalName = markData.getLegalName();
+        this.regCapital = markData.getRegisterCapital();
+        this.realCapital = markData.getRealCapital();
+        if (StringUtils.isNotBlank(markData.getEstablishDate())) {
+            this.establishDate = LocalDate.parse(markData.getEstablishDate(), MapperUtils.DF);
+        }
+        if (StringUtils.isNotBlank(markData.getVerifyDate())) {
+            this.approvalDate = markData.getVerifyDate();
+        }
+        this.businessTerm = markData.getBusinessTerm();
+        this.province = markData.getProvince();
+        this.city = markData.getCity();
+        this.district = markData.getDistrict();
+        this.registrar = markData.getRegistrar();
+        this.taxpayerCode = markData.getTaxpayerCode();
+        this.taxpayerCredential = markData.getTaxpayerCredential();
+        this.businessRegCode = markData.getBusinessRegisterCode();
+        this.organizationCode = markData.getOrganizationCode();
+        this.insureNum = markData.getInsureNum();
+        this.type = markData.getCompanyType();
+        this.previousName = markData.getPreviousName();
+        this.email = markData.getEmail();
+        this.industry = markData.getIndustry();
+        this.firstClassify = markData.getFirstClassify();
+        this.secondClassify = markData.getSecondClassify();
+        this.thirdClassify = markData.getThirdClassify();
+        this.lon = markData.getLon();
+        this.lat = markData.getLat();
     }
 }
