@@ -18,7 +18,7 @@ import java.util.concurrent.ThreadPoolExecutor;
 @EnableAsync(proxyTargetClass = true)
 public class ThreadPoolConfig {
 
-    @Bean
+    @Bean("taskExecutor")
     public TaskExecutor threadTaskExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
         // 线程池的线程最少数量
