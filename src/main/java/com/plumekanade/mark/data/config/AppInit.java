@@ -28,11 +28,8 @@ import java.sql.BatchUpdateException;
 import java.util.*;
 
 /**
- * 企业名单数据导入类
- *
- * @author kanade
- * @date 2023-12-15
- */
+ 企业名单数据导入类
+ @author kanade */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
@@ -41,7 +38,7 @@ public class AppInit implements ApplicationRunner {
     private String subPath;
     @Resource
     private ThreadPoolTaskExecutor taskExecutor;
-    //    private final CompanyRosterService companyRosterService;
+//    private final CompanyRosterService companyRosterService;
 //    private final CompanyRosterSourceService companyRosterSourceService;
 //    private final CompanyRosterContactService companyRosterContactService;
 //    private final BfCompanyRosterService bfCompanyRosterService;
@@ -112,66 +109,66 @@ public class AppInit implements ApplicationRunner {
                         return;
                     }
 //                    try {
-                        Map<String, Object> map = new HashMap<>(rowList.size());
-                        for (int j = 0; j < rowList.size(); j++) {
-                            if (j >= shortKeys.size() || j >= longKeys.size()) {
-                                break;
-                            }
-                            map.put(resultMsg.isShortFlag() ? shortKeys.get(j) : longKeys.get(j), rowList.get(j));
+                    Map<String, Object> map = new HashMap<>(rowList.size());
+                    for (int j = 0; j < rowList.size(); j++) {
+                        if (j >= shortKeys.size() || j >= longKeys.size()) {
+                            break;
                         }
-                        String data = MapperUtils.serialize(map);
-                        // 判断是否注销数据
-                        MarkerCompanyData dataItem = null;
-                        MarkerCompanyOffData offDataItem = null;
-                        String manageState = map.get("manageState").toString();
-                        if (off.equals(manageState) || manageState.contains(offed)) {
-                            offDataItem = MapperUtils.deserialize(data, MarkerCompanyOffData.class);
-                        } else {
-                            dataItem = MapperUtils.deserialize(data, MarkerCompanyData.class);
-                        }
-                        if (offDataItem != null && StringUtils.isNotBlank(offDataItem.getCompanyName())) {
-                            offList.add(offDataItem);
-                            if (offList.size() >= 300) {
-                                try {
-                                    log.info("【注销数据】文档 {} - {} 触发批量插入数据, 结果：{}", file.getName(), rowIndex, markerCompanyOffDataService.saveBatch(offList));
-                                } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
+                        map.put(resultMsg.isShortFlag() ? shortKeys.get(j) : longKeys.get(j), rowList.get(j));
+                    }
+                    String data = MapperUtils.serialize(map);
+                    // 判断是否注销数据
+                    MarkerCompanyData dataItem = null;
+                    MarkerCompanyOffData offDataItem = null;
+                    String manageState = map.get("manageState").toString();
+                    if (off.equals(manageState) || manageState.contains(offed)) {
+                        offDataItem = MapperUtils.deserialize(data, MarkerCompanyOffData.class);
+                    } else {
+                        dataItem = MapperUtils.deserialize(data, MarkerCompanyData.class);
+                    }
+                    if (offDataItem != null && StringUtils.isNotBlank(offDataItem.getCompanyName())) {
+                        offList.add(offDataItem);
+                        if (offList.size() >= 300) {
+                            try {
+                                log.info("【注销数据】文档 {} - {} 触发批量插入数据, 结果：{}", file.getName(), rowIndex, markerCompanyOffDataService.saveBatch(offList));
+                            } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
+                                taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
+                                log.error("【注销数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
+                            } catch (Exception e) {
+                                if (e.toString().contains("BatchUpdateException")) {
                                     taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
                                     log.error("【注销数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
-                                } catch (Exception e) {
-                                    if (e.toString().contains("BatchUpdateException")) {
-                                        taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
-                                        log.error("【注销数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
-                                    } else {
-                                        resultMsg.setCode(-1);
-                                        log.error("【注销数据】处理数据异常, 堆栈: ", e);
-                                    }
+                                } else {
+                                    resultMsg.setCode(-1);
+                                    log.error("【注销数据】处理数据异常, 堆栈: ", e);
                                 }
-//                                taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
-                                offList.clear();
                             }
-                        } else if (dataItem != null && StringUtils.isNotBlank(dataItem.getCompanyName())) {
-                            list.add(dataItem);
-                            if (list.size() >= 300) {
-                                try {
-                                    log.info("【名单数据】文档 {} - {} 触发批量插入数据, 结果：{}", file.getName(), rowIndex, markerCompanyDataService.saveBatch(list));
-                                } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
+//                                taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
+                            offList.clear();
+                        }
+                    } else if (dataItem != null && StringUtils.isNotBlank(dataItem.getCompanyName())) {
+                        list.add(dataItem);
+                        if (list.size() >= 300) {
+                            try {
+                                log.info("【名单数据】文档 {} - {} 触发批量插入数据, 结果：{}", file.getName(), rowIndex, markerCompanyDataService.saveBatch(list));
+                            } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
+                                taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
+                                log.error("【名单数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
+                            } catch (Exception e) {
+                                if (e.toString().contains("BatchUpdateException")) {
                                     taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
                                     log.error("【名单数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
-                                } catch (Exception e) {
-                                    if (e.toString().contains("BatchUpdateException")) {
-                                        taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
-                                        log.error("【名单数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
-                                    } else {
-                                        resultMsg.setCode(-1);
-                                        log.error("【名单数据】处理数据异常, 堆栈: ", e);
-                                    }
+                                } else {
+                                    resultMsg.setCode(-1);
+                                    log.error("【名单数据】处理数据异常, 堆栈: ", e);
                                 }
-//                                taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
-                                list.clear();
                             }
-                        } else {
-                            log.error("【名单数据】跳过文档行: {}, 数据为空", rowIndex);
+//                                taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
+                            list.clear();
                         }
+                    } else {
+                        log.error("【名单数据】跳过文档行: {}, 数据为空", rowIndex);
+                    }
 //                    } catch (Exception e) {
 //                        resultMsg.setCode(-1);
 //                        log.error("【名单数据】处理数据异常, 堆栈: ", e);
@@ -244,7 +241,7 @@ public class AppInit implements ApplicationRunner {
     }*/
 
     /** 处理马克数据合并到名单库 */
-    public void handleMarkMerge(List<MarkerCompanyData> markRosters) {
+    /*public void handleMarkMerge(List<MarkerCompanyData> markRosters) {
         List<CompanyRoster> rosters = new ArrayList<>();
         for (MarkerCompanyData markRoster : markRosters) {
             CompanyRoster companyRoster = new CompanyRoster(markRoster.getCompanyName(), markRoster.getCreditCode(), markRoster.getManageState(), markRoster.getUrl(), markRoster.getContactPhone(), "", "", markRoster.getRegisterAddress(), markRoster.getCompanySize(), markRoster.getBusinessScope());
@@ -259,10 +256,10 @@ public class AppInit implements ApplicationRunner {
         } else {
             log.error("【马克数据】批量合并失败, 数据库添加结果为 false, 未出现异常");
         }
-    }
+    }*/
 
     /**
-     * 拆分100条/次
+     拆分100条/次
      */
     public void handleDuplicateKey(List<MarkerCompanyData> dataList) {
 //        taskExecutor.submit(() -> handleSubDuplicateKey(dataList));
@@ -369,7 +366,7 @@ public class AppInit implements ApplicationRunner {
     }
 
     /**
-     * 拆分100条/次
+     拆分100条/次
      */
     public void handleOffDuplicateKey(List<MarkerCompanyOffData> dataList) {
 //        taskExecutor.submit(() -> handleOffSubDuplicateKey(dataList));
