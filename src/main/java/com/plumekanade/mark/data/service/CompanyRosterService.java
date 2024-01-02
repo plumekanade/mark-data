@@ -11,4 +11,8 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class CompanyRosterService extends ServiceImpl<CompanyRosterMapper, CompanyRoster> {
+    /** 根据名称获取企业名单 */
+    public CompanyRoster getByName(String name) {
+        return baseMapper.getByName(name);
+    }
 }

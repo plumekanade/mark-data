@@ -121,4 +121,6 @@ public class BfCompanyRoster implements Serializable {
     private String creditCode;
     /** 登记状态 */
     private String registrationState;
+    /** 是否已添加到名单库，0否 1是 */
+    private Integer state;
 }

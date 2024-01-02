@@ -50,6 +50,9 @@ public class CompanyRosterContact implements Serializable {
             this.name = legalName;
         }
         this.phone = StringUtils.isNotBlank(roster.getLinkPhone()) ? roster.getLinkPhone() : roster.getContactPhone();
+        if (this.phone != null) {
+            this.phone = this.phone.trim();
+        }
         this.creator = "系统导入";
     }
 }

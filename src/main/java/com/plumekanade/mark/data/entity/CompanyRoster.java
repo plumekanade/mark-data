@@ -5,6 +5,7 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.plumekanade.mark.data.consts.ProjectConst;
 import com.plumekanade.mark.data.utils.MapperUtils;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -161,40 +162,41 @@ public class CompanyRoster implements Serializable {
     private CompanyRosterContact contact;
 
     public CompanyRoster(String name, String creditCode, String manageState, String url, String contactPhone, String keywords, String address, String regAddress, String companySize, String businessScope) {
-        this.name = name;
-        this.creditCode = creditCode;
-        this.manageState = manageState;
-        this.url = url;
-        this.contactPhone = contactPhone;
-        this.keywords = keywords;
-        this.address = address;
-        this.regAddress = regAddress;
-        this.companySize = companySize;
-        this.businessScope = businessScope;
+
+        this.name = handleStr(name);
+        this.creditCode = handleStr(creditCode);
+        this.manageState = handleStr(manageState);
+        this.url = handleStr(url);
+        this.contactPhone = handleStr(contactPhone);
+        this.keywords = handleStr(keywords);
+        this.address = handleStr(address);
+        this.regAddress = handleStr(regAddress);
+        this.companySize = handleStr(companySize);
+        this.businessScope = handleStr(businessScope);
     }
 
     public void setBfProps(BfCompanyRoster companyRoster) {
-        this.bfJoinDate = companyRoster.getCompanyDate();
-        this.bfHyTitle = companyRoster.getTitle();
-        this.bfHySubTitle = companyRoster.getSubTitle();
+        this.bfJoinDate = handleStr(companyRoster.getCompanyDate());
+        this.bfHyTitle = handleStr(companyRoster.getTitle());
+        this.bfHySubTitle = handleStr(companyRoster.getSubTitle());
         this.bfSku = companyRoster.getHasSku();
-        this.bfPrefixId = companyRoster.getCrawCompanyId();
+        this.bfPrefixId = handleStr(companyRoster.getCrawCompanyId());
         if (StringUtils.isBlank(this.bfPrefixId)) {
-            this.bfPrefixId = companyRoster.getCompanyIdY();
+            this.bfPrefixId = handleStr(companyRoster.getCompanyIdY());
         }
-        this.monthlyProduction = companyRoster.getMonthlyProduction();
-        this.annualTurnover = companyRoster.getYearTurnover();
-        this.annualExport = companyRoster.getYearExport();
-        this.classify = companyRoster.getEnterpriseType();
-        this.mainCustomer = companyRoster.getMainCustomer();
-        this.mainManageLocation = companyRoster.getMainManageLocation();
-        this.mainMarket = companyRoster.getMainMarket();
-        this.mainProductServe = companyRoster.getMainProductServe();
-        this.postCode = companyRoster.getPostCode();
-        this.faxCode = companyRoster.getFaxCode();
-        this.manageState = companyRoster.getManageState();
+        this.monthlyProduction = handleStr(companyRoster.getMonthlyProduction());
+        this.annualTurnover = handleStr(companyRoster.getYearTurnover());
+        this.annualExport = handleStr(companyRoster.getYearExport());
+        this.classify = handleStr(companyRoster.getEnterpriseType());
+        this.mainCustomer = handleStr(companyRoster.getMainCustomer());
+        this.mainManageLocation = handleStr(companyRoster.getMainManageLocation());
+        this.mainMarket = handleStr(companyRoster.getMainMarket());
+        this.mainProductServe = handleStr(companyRoster.getMainProductServe());
+        this.postCode = handleStr(companyRoster.getPostCode());
+        this.faxCode = handleStr(companyRoster.getFaxCode());
+        this.manageState = handleStr(companyRoster.getManageState());
         if (StringUtils.isBlank(this.manageState)) {
-            this.manageState = companyRoster.getRegistrationState();
+            this.manageState = handleStr(companyRoster.getRegistrationState());
         }
 
         // 企业类型判断
@@ -213,20 +215,30 @@ public class CompanyRoster implements Serializable {
                 this.type = typeName;
             }
         }
+        this.type = handleStr(this.type);
         this.legalName = StringUtils.isNotBlank(companyRoster.getLegalUser()) ? companyRoster.getLegalUser() : companyRoster.getLegalName();
+        this.legalName = handleStr(this.legalName);
         this.regCapital = StringUtils.isNotBlank(companyRoster.getRegCapital()) ? companyRoster.getRegCapital() : companyRoster.getRegisterCapital();
+        this.regCapital = handleStr(this.regCapital);
         String date = StringUtils.isNotBlank(companyRoster.getBuildDate()) ? companyRoster.getBuildDate() : companyRoster.getEstablishDate();
-        if (StringUtils.isNotBlank(date)) {
-            this.establishDate = LocalDate.parse(date, MapperUtils.DF);
+        try {
+            if (StringUtils.isNotBlank(date)) {
+                if (date.length() == 4) {
+                    date = date + "-01-01";
+                }
+                this.establishDate = LocalDate.parse(date, MapperUtils.DF);
+            }
+        } catch (Exception e) {
+            // 格式化成立日期失败, 不管
         }
-        this.companySize = companyRoster.getStaffNum();
-        this.manageSystemAuth = companyRoster.getManageSystemAuth();
-        this.plantArea = companyRoster.getPlantArea();
-        this.oemAgentProcess = companyRoster.getOemAgentProcess();
-        this.openBank = companyRoster.getOpenBank();
-        this.bankAccount = companyRoster.getBankAccount();
-        this.businessRegCode = companyRoster.getBusinessRegisterCode();
-        this.residence = companyRoster.getResidence();
+        this.companySize = handleStr(companyRoster.getStaffNum());
+        this.manageSystemAuth = handleStr(companyRoster.getManageSystemAuth());
+        this.plantArea = handleStr(companyRoster.getPlantArea());
+        this.oemAgentProcess = handleStr(companyRoster.getOemAgentProcess());
+        this.openBank = handleStr(companyRoster.getOpenBank());
+        this.bankAccount = handleStr(companyRoster.getBankAccount());
+        this.businessRegCode = handleStr(companyRoster.getBusinessRegisterCode());
+        this.residence = handleStr(companyRoster.getResidence());
         this.businessTerm = "";
         if (StringUtils.isNotBlank(companyRoster.getFromBusinessTerm())) {
             this.businessTerm = companyRoster.getFromBusinessTerm();
@@ -234,41 +246,46 @@ public class CompanyRoster implements Serializable {
         if (StringUtils.isNotBlank(companyRoster.getToBusinessTerm())) {
             this.businessTerm += " 至 " + companyRoster.getToBusinessTerm();
         }
-        this.registrar = companyRoster.getRegistrar();
-        this.approvalDate = companyRoster.getApprovalDate();
-        this.profile = companyRoster.getProfile();
+        this.businessTerm = handleStr(this.businessTerm);
+        this.registrar = handleStr(companyRoster.getRegistrar());
+        this.approvalDate = handleStr(companyRoster.getApprovalDate());
+        this.profile = handleStr(companyRoster.getProfile());
     }
 
     public void setMarkProps(MarkerCompanyData markData) {
-        this.engName = markData.getEngName();
-        this.approvalDate = markData.getVerifyDate();
-        this.legalName = markData.getLegalName();
-        this.regCapital = markData.getRegisterCapital();
-        this.realCapital = markData.getRealCapital();
+        this.engName = handleStr(markData.getEngName());
+        this.approvalDate = handleStr(markData.getVerifyDate());
+        this.legalName = handleStr(markData.getLegalName());
+        this.regCapital = handleStr(markData.getRegisterCapital());
+        this.realCapital = handleStr(markData.getRealCapital());
         if (StringUtils.isNotBlank(markData.getEstablishDate())) {
-            this.establishDate = LocalDate.parse(markData.getEstablishDate(), MapperUtils.DF);
+            this.establishDate = LocalDate.parse(handleStr(markData.getEstablishDate()), MapperUtils.DF);
         }
-        if (StringUtils.isNotBlank(markData.getVerifyDate())) {
-            this.approvalDate = markData.getVerifyDate();
+        this.businessTerm = handleStr(markData.getBusinessTerm());
+        this.province = handleStr(markData.getProvince());
+        this.city = handleStr(markData.getCity());
+        this.district = handleStr(markData.getDistrict());
+        this.registrar = handleStr(markData.getRegistrar());
+        this.taxpayerCode = handleStr(markData.getTaxpayerCode());
+        this.taxpayerCredential = handleStr(markData.getTaxpayerCredential());
+        this.businessRegCode = handleStr(markData.getBusinessRegisterCode());
+        this.organizationCode = handleStr(markData.getOrganizationCode());
+        this.insureNum = handleStr(markData.getInsureNum());
+        this.type = handleStr(markData.getCompanyType());
+        this.previousName = handleStr(markData.getPreviousName());
+        this.email = handleStr(markData.getEmail());
+        this.industry = handleStr(markData.getIndustry());
+        this.firstClassify = handleStr(markData.getFirstClassify());
+        this.secondClassify = handleStr(markData.getSecondClassify());
+        this.thirdClassify = handleStr(markData.getThirdClassify());
+        this.lon = handleStr(markData.getLon());
+        this.lat = handleStr(markData.getLat());
+    }
+
+    public String handleStr(String str) {
+        if (StringUtils.isNotBlank(str)) {
+            str = str.replaceAll(ProjectConst.B_SPACE, ProjectConst.NO_STR).replaceAll(ProjectConst.SPACE, ProjectConst.NO_STR).replaceAll(ProjectConst.WRAP, ProjectConst.NO_STR);
         }
-        this.businessTerm = markData.getBusinessTerm();
-        this.province = markData.getProvince();
-        this.city = markData.getCity();
-        this.district = markData.getDistrict();
-        this.registrar = markData.getRegistrar();
-        this.taxpayerCode = markData.getTaxpayerCode();
-        this.taxpayerCredential = markData.getTaxpayerCredential();
-        this.businessRegCode = markData.getBusinessRegisterCode();
-        this.organizationCode = markData.getOrganizationCode();
-        this.insureNum = markData.getInsureNum();
-        this.type = markData.getCompanyType();
-        this.previousName = markData.getPreviousName();
-        this.email = markData.getEmail();
-        this.industry = markData.getIndustry();
-        this.firstClassify = markData.getFirstClassify();
-        this.secondClassify = markData.getSecondClassify();
-        this.thirdClassify = markData.getThirdClassify();
-        this.lon = markData.getLon();
-        this.lat = markData.getLat();
+        return str;
     }
 }

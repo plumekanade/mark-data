@@ -3,6 +3,7 @@ package com.plumekanade.mark.data.config;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.poi.excel.ExcelUtil;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.StringUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -39,10 +40,10 @@ public class AppInit implements ApplicationRunner {
     private String subPath;
     @Resource
     private ThreadPoolTaskExecutor taskExecutor;
-//    private final CompanyRosterService companyRosterService;
-//    private final CompanyRosterSourceService companyRosterSourceService;
-//    private final CompanyRosterContactService companyRosterContactService;
-//    private final BfCompanyRosterService bfCompanyRosterService;
+    private final CompanyRosterService companyRosterService;
+    private final CompanyRosterSourceService companyRosterSourceService;
+    private final CompanyRosterContactService companyRosterContactService;
+    private final BfCompanyRosterService bfCompanyRosterService;
     private final MarkerCompanyDataService markerCompanyDataService;
     private final MarkerCompanyOffDataService markerCompanyOffDataService;
     private final List<String> shortKeys = new ArrayList<>(Arrays.asList("companyName", "manageState", "legalName", "registerCapital", "realCapital", "establishDate", "verifyDate", "businessTerm", "province", "city", "district", "creditCode", "taxpayerCode", "businessRegisterCode", "organizationCode", "insureNum", "companyType", "industry", "previousName", "registerAddress", "url", "contactPhone", "email", "businessScope"));
@@ -51,44 +52,45 @@ public class AppInit implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws Exception {
         // 八方数据合并到名单库
-//        taskExecutor.submit(() -> {
-//            int current = 1;
-//            int size = 1000;
-//            boolean flag = true;
-//            while (flag) {
-//                Page<BfCompanyRoster> page = bfCompanyRosterService.page(new Page<>(current++, size));
-//                flag = page.hasNext();
-//                taskExecutor.submit(() -> handleMergeBf(page.getRecords()));
-//                if (!flag) {
-//                    break;
-//                }
-//                Page<BfCompanyRoster> page1 = bfCompanyRosterService.page(new Page<>(current++, size));
-//                flag = page1.hasNext();
-//                taskExecutor.submit(() -> handleMergeBf(page1.getRecords()));
-//                if (!flag) {
-//                    break;
-//                }
-//                Page<BfCompanyRoster> page2 = bfCompanyRosterService.page(new Page<>(current++, size));
-//                taskExecutor.submit(() -> handleMergeBf(page2.getRecords()));
-//                flag = page2.hasNext();
-//                if (!flag) {
-//                    break;
-//                }
-//                Page<BfCompanyRoster> page3 = bfCompanyRosterService.page(new Page<>(current++, size));
-//                taskExecutor.submit(() -> handleMergeBf(page3.getRecords()));
-//                flag = page3.hasNext();
-//                if (!flag) {
-//                    break;
-//                }
-//                Page<BfCompanyRoster> page4 = bfCompanyRosterService.page(new Page<>(current++, size));
-//                handleMergeBf(page4.getRecords());
-//                flag = page4.hasNext();
-//            }
-//        });
+        taskExecutor.submit(() -> {
+            int current = 1;
+            int size = 1000;
+            boolean flag = true;
+//            LambdaQueryWrapper<BfCompanyRoster> wrapper = Wrappers.lambdaQuery(BfCompanyRoster.class).eq(BfCompanyRoster::getState, 1);
+            while (flag) {
+                Page<BfCompanyRoster> page = bfCompanyRosterService.page(new Page<>(current++, size));
+                flag = page.hasNext();
+                taskExecutor.submit(() -> handleMergeBf(page.getRecords()));
+                if (!flag) {
+                    break;
+                }
+                Page<BfCompanyRoster> page1 = bfCompanyRosterService.page(new Page<>(current++, size));
+                flag = page1.hasNext();
+                taskExecutor.submit(() -> handleMergeBf(page1.getRecords()));
+                if (!flag) {
+                    break;
+                }
+                Page<BfCompanyRoster> page2 = bfCompanyRosterService.page(new Page<>(current++, size));
+                taskExecutor.submit(() -> handleMergeBf(page2.getRecords()));
+                flag = page2.hasNext();
+                if (!flag) {
+                    break;
+                }
+                Page<BfCompanyRoster> page3 = bfCompanyRosterService.page(new Page<>(current++, size));
+                taskExecutor.submit(() -> handleMergeBf(page3.getRecords()));
+                flag = page3.hasNext();
+                if (!flag) {
+                    break;
+                }
+                Page<BfCompanyRoster> page4 = bfCompanyRosterService.page(new Page<>(current++, size));
+                handleMergeBf(page4.getRecords());
+                flag = page4.hasNext();
+            }
+        });
 
 
         // 马克数据导入
-        taskExecutor.submit(() -> {
+        /*taskExecutor.submit(() -> {
             // 导入成功后的文件目录
             String moveDir = "C:\\Users\\equipl\\code\\ImportSuccess\\";
             // 读取数据文件目录
@@ -207,39 +209,106 @@ public class AppInit implements ApplicationRunner {
             }
 
             log.info("【名单导入】文件夹内数据已全部导入...");
-        });
+        });*/
     }
 
     /** 处理八方数据合并到名单库 */
-    /*public void handleMergeBf(List<BfCompanyRoster> bfRosters) {
-        List<CompanyRoster> rosters = new ArrayList<>();
-        for (BfCompanyRoster roster : bfRosters) {
-            CompanyRoster companyRoster = new CompanyRoster(roster.getCompanyName(), roster.getCreditCode(), roster.getManageState(), roster.getCompanyUrl(), roster.getContactPhone(), roster.getCompanyKeyword(), roster.getCompanyAddress(), roster.getRegisterAddress(), roster.getStaffNum(), roster.getBusinessScope());
-            companyRoster.setBfProps(roster);
-            companyRoster.setContact(new CompanyRosterContact(roster, companyRoster.getLegalName()));
-            rosters.add(companyRoster);
-        }
-        boolean flag = companyRosterService.saveBatch(rosters);
-        if (!flag) {
-            log.error("【名单库】批量插入到名单库未知失败....");
-        }
-        threadTaskExecutor.submit(() -> {
-           List<CompanyRosterContact> contacts = new ArrayList<>();
-           List<CompanyRosterSource> sources = new ArrayList<>();
-            try {
-                rosters.forEach(roster -> {
-                    CompanyRosterContact contact = roster.getContact();
-                    contact.setCompanyRosterId(roster.getId());
-                    contacts.add(contact);
-                    sources.add(new CompanyRosterSource(roster.getId(), CompanyRosterSourceEnum.BF));
-                });
-                companyRosterContactService.saveBatch(contacts);
-                companyRosterSourceService.saveBatch(sources);
-            } catch (Exception e) {
-                log.error("【联系人&来源】批量插入联系人&来源关联数据失败, 异常堆栈: ", e);
+    public void handleMergeBf(List<BfCompanyRoster> bfRosters) {
+//        List<CompanyRoster> rosters = new ArrayList<>();
+        try {
+            for (BfCompanyRoster roster : bfRosters) {
+                CompanyRoster companyRoster = new CompanyRoster(roster.getCompanyName(), roster.getCreditCode(), roster.getManageState(), roster.getCompanyUrl(), roster.getContactPhone(), roster.getCompanyKeyword(), roster.getCompanyAddress(), roster.getRegisterAddress(), roster.getStaffNum(), roster.getBusinessScope());
+                companyRoster.setBfProps(roster);
+                try {
+//                    rosters.add(companyRoster);
+                    roster.setState(1);
+                    companyRosterService.save(companyRoster);
+                    CompanyRosterContact contact = new CompanyRosterContact(roster, companyRoster.getLegalName());
+                    contact.setCompanyRosterId(companyRoster.getId());
+                    try {
+                        companyRosterContactService.save(contact);
+                    } catch (Exception e) {
+                        log.error("【八方】保存联系人数据异常, 堆栈: ", e);
+                    }
+                    try {
+                        companyRosterSourceService.save(new CompanyRosterSource(companyRoster.getId(), CompanyRosterSourceEnum.BF));
+                    } catch (Exception e) {
+                        log.error("【八方】保存来源数据异常, 堆栈信息: ", e);
+                    }
+                } catch (DeadlockLoserDataAccessException | CannotAcquireLockException le) {
+                    log.error("【八方】数据 {} 开始死锁循环插入.....", companyRoster.getName());
+                    // 开启循环插入数据
+                    while (true) {
+                        try {
+                            companyRosterService.save(companyRoster);
+                        } catch (DeadlockLoserDataAccessException | CannotAcquireLockException dle) {    // 再出现死锁继续循环
+                            continue;
+                        } catch (DuplicateKeyException dke) {
+                            handleBfDuplicate(companyRoster, roster);
+                        } catch (Exception ex) {
+                            log.error("【八方】死锁循环插入异常, 堆栈信息: ", ex);
+                        }
+                        log.error("【八方】数据 {} 结束死锁循环.....", companyRoster.getName());
+                        roster.setState(1);
+                        break;
+                    }
+                } catch (DuplicateKeyException de) {
+                    handleBfDuplicate(companyRoster, roster);
+                } catch (Exception ee) {
+                    if (!ee.toString().contains("BadSqlGrammarException")) {
+                        log.error("【八方】单条插入异常, 堆栈: ", ee);
+                    }
+                }
             }
-        });
-    }*/
+//            boolean flag = companyRosterService.saveBatch(rosters);
+//            if (!flag) {
+//                log.error("【名单库】批量插入到名单库未知失败....");
+//            }
+            // 更新已添加状态
+            bfCompanyRosterService.updateBatchById(bfRosters);
+        } catch (Exception e) {
+            log.error("组装异常: ", e);
+        }
+//        taskExecutor.submit(() -> {
+//           List<CompanyRosterContact> contacts = new ArrayList<>();
+//           List<CompanyRosterSource> sources = new ArrayList<>();
+//            try {
+//                rosters.forEach(roster -> {
+//                    CompanyRosterContact contact = roster.getContact();
+//                    contact.setCompanyRosterId(roster.getId());
+//                    contacts.add(contact);
+//                    sources.add(new CompanyRosterSource(roster.getId(), CompanyRosterSourceEnum.BF));
+//                });
+//                companyRosterContactService.saveBatch(contacts);
+//                companyRosterSourceService.saveBatch(sources);
+//            } catch (Exception e) {
+//                log.error("【联系人&来源】批量插入联系人&来源关联数据失败, 异常堆栈: ", e);
+//            }
+//        });
+    }
+
+    /** 处理八方数据重复 */
+    public void handleBfDuplicate(CompanyRoster companyRoster, BfCompanyRoster bfRoster) {
+        CompanyRoster dbRoster = companyRosterService.getByName(companyRoster.getName());
+        if (dbRoster == null) {
+            log.error("【八方】主键/唯一键重复, 二次查询还是 null ？？？！！！");
+        } else {
+            try {
+                companyRoster.setId(dbRoster.getId());
+                companyRosterService.updateById(companyRoster);
+                CompanyRosterContact contact = new CompanyRosterContact(bfRoster, bfRoster.getLegalName());
+                contact.setCompanyRosterId(companyRoster.getId());
+                try {
+                    companyRosterContactService.save(contact);
+                } catch (DuplicateKeyException de) {
+                } catch (Exception e) {
+                    log.error("【八方】保存联系人数据异常, 堆栈: ", e);
+                }
+            } catch (Exception e) {
+                log.error("【八方】更新数据出现异常, 堆栈信息: ", e);
+            }
+        }
+    }
 
     /** 处理马克数据合并到名单库 */
     /*public void handleMarkMerge(List<MarkerCompanyData> markRosters) {
