@@ -56,35 +56,68 @@ public class AppInit implements ApplicationRunner {
             int current = 1;
             int size = 1000;
             boolean flag = true;
-//            LambdaQueryWrapper<BfCompanyRoster> wrapper = Wrappers.lambdaQuery(BfCompanyRoster.class).eq(BfCompanyRoster::getState, 1);
-            while (flag) {
-                Page<BfCompanyRoster> page = bfCompanyRosterService.page(new Page<>(current++, size));
-                flag = page.hasNext();
-                taskExecutor.submit(() -> handleMergeBf(page.getRecords()));
-                if (!flag) {
-                    break;
+            LambdaQueryWrapper<BfCompanyRoster> wrapper = Wrappers.lambdaQuery(BfCompanyRoster.class).eq(BfCompanyRoster::getState, 0);
+            try {
+                while (flag) {
+                    Page<BfCompanyRoster> page = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+                    flag = page.hasNext();
+                    taskExecutor.submit(() -> {
+                        log.info("【八方】1号子线程开始合并数据...");
+                        try {
+                            handleMergeBf(page.getRecords());
+                        } catch (Exception e) {
+                            log.error("【八方】1号子线程合并异常: ", e);
+                        }
+                    });
+                    if (!flag) {
+                        break;
+                    }
+                    Page<BfCompanyRoster> page1 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+                    flag = page1.hasNext();
+                    taskExecutor.submit(() -> {
+                        log.info("【八方】2号子线程开始合并数据...");
+                        try {
+                            handleMergeBf(page1.getRecords());
+                        } catch (Exception e) {
+                            log.error("【八方】2号子线程合并异常: ", e);
+                        }
+                    });
+                    if (!flag) {
+                        break;
+                    }
+                    Page<BfCompanyRoster> page2 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+                    taskExecutor.submit(() -> {
+                        log.info("【八方】3号子线程开始合并数据...");
+                        try {
+                            handleMergeBf(page2.getRecords());
+                        } catch (Exception e) {
+                            log.error("【八方】3号子线程合并异常: ", e);
+                        }
+                    });
+                    flag = page2.hasNext();
+                    if (!flag) {
+                        break;
+                    }
+                    Page<BfCompanyRoster> page3 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+                    taskExecutor.submit(() -> {
+                        log.info("【八方】4号子线程开始合并数据...");
+                        try {
+                            handleMergeBf(page3.getRecords());
+                        } catch (Exception e) {
+                            log.error("【八方】4号子线程合并异常: ", e);
+                        }
+                    });
+                    flag = page3.hasNext();
+                    if (!flag) {
+                        break;
+                    }
+                    log.info("【八方】主线程开始合并数据...");
+                    Page<BfCompanyRoster> page4 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+                    handleMergeBf(page4.getRecords());
+                    flag = page4.hasNext();
                 }
-                Page<BfCompanyRoster> page1 = bfCompanyRosterService.page(new Page<>(current++, size));
-                flag = page1.hasNext();
-                taskExecutor.submit(() -> handleMergeBf(page1.getRecords()));
-                if (!flag) {
-                    break;
-                }
-                Page<BfCompanyRoster> page2 = bfCompanyRosterService.page(new Page<>(current++, size));
-                taskExecutor.submit(() -> handleMergeBf(page2.getRecords()));
-                flag = page2.hasNext();
-                if (!flag) {
-                    break;
-                }
-                Page<BfCompanyRoster> page3 = bfCompanyRosterService.page(new Page<>(current++, size));
-                taskExecutor.submit(() -> handleMergeBf(page3.getRecords()));
-                flag = page3.hasNext();
-                if (!flag) {
-                    break;
-                }
-                Page<BfCompanyRoster> page4 = bfCompanyRosterService.page(new Page<>(current++, size));
-                handleMergeBf(page4.getRecords());
-                flag = page4.hasNext();
+            } catch (Exception e) {
+                log.error("【八方】异常导致循环跳出, 堆栈信息: ", e);
             }
         });
 
@@ -213,7 +246,7 @@ public class AppInit implements ApplicationRunner {
     }
 
     /** 处理八方数据合并到名单库 */
-    public void handleMergeBf(List<BfCompanyRoster> bfRosters) {
+    public void handleMergeBf(List<BfCompanyRoster> bfRosters) throws Exception {
 //        List<CompanyRoster> rosters = new ArrayList<>();
         try {
             for (BfCompanyRoster roster : bfRosters) {
