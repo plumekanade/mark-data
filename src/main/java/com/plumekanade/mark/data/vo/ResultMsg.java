@@ -20,7 +20,7 @@ public class ResultMsg implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    private Integer code = 0;
+    private Integer code = 1;
     private boolean shortFlag = false;
     private String message = "ok";
     private Object data;

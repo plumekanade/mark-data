@@ -255,6 +255,9 @@ public class CompanyRoster implements Serializable {
     public void setMarkProps(MarkerCompanyData markData) {
         this.engName = handleStr(markData.getEngName());
         this.approvalDate = handleStr(markData.getVerifyDate());
+        if (StringUtils.isNotBlank(this.approvalDate) && this.approvalDate.length() > 10) {
+            this.approvalDate = this.approvalDate.substring(0, 10);
+        }
         this.legalName = handleStr(markData.getLegalName());
         this.regCapital = handleStr(markData.getRegisterCapital());
         this.realCapital = handleStr(markData.getRealCapital());
@@ -285,6 +288,9 @@ public class CompanyRoster implements Serializable {
     public String handleStr(String str) {
         if (StringUtils.isNotBlank(str)) {
             str = str.replaceAll(ProjectConst.B_SPACE, ProjectConst.NO_STR).replaceAll(ProjectConst.SPACE, ProjectConst.NO_STR).replaceAll(ProjectConst.WRAP, ProjectConst.NO_STR);
+        }
+        if ("-".equals(str)) {
+            str = null;
         }
         return str;
     }

@@ -51,73 +51,158 @@ public class AppInit implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        // 八方数据合并到名单库
+        // 八方/马克数据合并到名单库
         taskExecutor.submit(() -> {
-            int current = 1;
+            int total = 0;
             int size = 1000;
-            boolean flag = true;
-            LambdaQueryWrapper<BfCompanyRoster> wrapper = Wrappers.lambdaQuery(BfCompanyRoster.class).eq(BfCompanyRoster::getState, 0);
+//            boolean flag = true;
+            String maxId = "186882584";
+//            LambdaQueryWrapper<BfCompanyRoster> wrapper = Wrappers.lambdaQuery(BfCompanyRoster.class).eq(BfCompanyRoster::getState, 0);
             try {
-                while (flag) {
-                    Page<BfCompanyRoster> page = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
-                    flag = page.hasNext();
+                while (true) {
+//                    Page<BfCompanyRoster> page = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+//                    taskExecutor.submit(() -> {
+//                        log.info("【八方】1号子线程开始合并数据...");
+//                        try {
+//                            handleMergeBf(page.getRecords());
+//                        } catch (Exception e) {
+//                            log.error("【八方】1号子线程合并异常: ", e);
+//                        }
+//                    });
+//                    flag = page.hasNext();
+//                    if (!flag) {
+//                        break;
+//                    }
+
+//                    Page<BfCompanyRoster> page1 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+//                    taskExecutor.submit(() -> {
+//                        log.info("【八方】2号子线程开始合并数据...");
+//                        try {
+//                            handleMergeBf(page1.getRecords());
+//                        } catch (Exception e) {
+//                            log.error("【八方】2号子线程合并异常: ", e);
+//                        }
+//                    });
+//                    flag = page1.hasNext();
+//                    if (!flag) {
+//                        break;
+//                    }
+//
+//                    Page<BfCompanyRoster> page2 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+//                    taskExecutor.submit(() -> {
+//                        log.info("【八方】3号子线程开始合并数据...");
+//                        try {
+//                            handleMergeBf(page2.getRecords());
+//                        } catch (Exception e) {
+//                            log.error("【八方】3号子线程合并异常: ", e);
+//                        }
+//                    });
+//                    flag = page2.hasNext();
+//                    if (!flag) {
+//                        break;
+//                    }
+//
+//                    Page<BfCompanyRoster> page3 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+//                    taskExecutor.submit(() -> {
+//                        log.info("【八方】4号子线程开始合并数据...");
+//                        try {
+//                            handleMergeBf(page3.getRecords());
+//                        } catch (Exception e) {
+//                            log.error("【八方】4号子线程合并异常: ", e);
+//                        }
+//                    });
+//                    flag = page3.hasNext();
+//                    if (!flag) {
+//                        break;
+//                    }
+
+//                    log.info("【八方】主线程开始合并数据...");
+//                    Page<BfCompanyRoster> page4 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+//                    handleMergeBf(page4.getRecords());
+//                    flag = page4.hasNext();
+
+
+                    List<MarkerCompanyData> list = markerCompanyDataService.limitList(maxId, size);
+                    int listSize = list.size();
+                    total += listSize;
+                    log.info("【马克】开始合并数据 {} ~ {} , maxId = {}", total - 1000, total, maxId);
                     taskExecutor.submit(() -> {
-                        log.info("【八方】1号子线程开始合并数据...");
                         try {
-                            handleMergeBf(page.getRecords());
+                            handleMarkMerge(list);
                         } catch (Exception e) {
-                            log.error("【八方】1号子线程合并异常: ", e);
+                            log.error("【马克】数据合并异常: ", e);
                         }
                     });
-                    if (!flag) {
+                    maxId = list.get(listSize - 1).getId();
+                    if (listSize < 1000) {
                         break;
                     }
-                    Page<BfCompanyRoster> page1 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
-                    flag = page1.hasNext();
+
+                    List<MarkerCompanyData> list1 = markerCompanyDataService.limitList(maxId, size);
+                    listSize = list1.size();
+                    total += listSize;
+                    log.info("【马克】开始合并数据 {} ~ {} , maxId = {}", total - 1000, total, maxId);
                     taskExecutor.submit(() -> {
-                        log.info("【八方】2号子线程开始合并数据...");
                         try {
-                            handleMergeBf(page1.getRecords());
+                            handleMarkMerge(list1);
                         } catch (Exception e) {
-                            log.error("【八方】2号子线程合并异常: ", e);
+                            log.error("【马克】数据合并异常: ", e);
                         }
                     });
-                    if (!flag) {
+                    maxId = list1.get(listSize - 1).getId();
+                    if (listSize < 1000) {
                         break;
                     }
-                    Page<BfCompanyRoster> page2 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+
+                    List<MarkerCompanyData> list2 = markerCompanyDataService.limitList(maxId, size);
+                    listSize = list2.size();
+                    total += listSize;
+                    log.info("【马克】开始合并数据 {} ~ {} , maxId = {}", total - 1000, total, maxId);
                     taskExecutor.submit(() -> {
-                        log.info("【八方】3号子线程开始合并数据...");
                         try {
-                            handleMergeBf(page2.getRecords());
+                            handleMarkMerge(list2);
                         } catch (Exception e) {
-                            log.error("【八方】3号子线程合并异常: ", e);
+                            log.error("【马克】数据合并异常: ", e);
                         }
                     });
-                    flag = page2.hasNext();
-                    if (!flag) {
+                    maxId = list2.get(listSize - 1).getId();
+                    if (listSize < 1000) {
                         break;
                     }
-                    Page<BfCompanyRoster> page3 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
+
+                    List<MarkerCompanyData> list3 = markerCompanyDataService.limitList(maxId, size);
+                    listSize = list3.size();
+                    total += listSize;
+                    log.info("【马克】开始合并数据 {} ~ {} , maxId = {}", total - 1000, total, maxId);
                     taskExecutor.submit(() -> {
-                        log.info("【八方】4号子线程开始合并数据...");
                         try {
-                            handleMergeBf(page3.getRecords());
+                            handleMarkMerge(list3);
                         } catch (Exception e) {
-                            log.error("【八方】4号子线程合并异常: ", e);
+                            log.error("【马克】数据合并异常: ", e);
                         }
                     });
-                    flag = page3.hasNext();
-                    if (!flag) {
+                    maxId = list3.get(listSize - 1).getId();
+                    if (listSize < 1000) {
                         break;
                     }
-                    log.info("【八方】主线程开始合并数据...");
-                    Page<BfCompanyRoster> page4 = bfCompanyRosterService.page(new Page<>(current++, size), wrapper);
-                    handleMergeBf(page4.getRecords());
-                    flag = page4.hasNext();
+
+                    List<MarkerCompanyData> list4 = markerCompanyDataService.limitList(maxId, size);
+                    listSize = list4.size();
+                    total += listSize;
+                    log.info("【马克】开始合并数据 {} ~ {} , maxId = {}", total - 1000, total, maxId);
+                    try {
+                        handleMarkMerge(list4);
+                    } catch (Exception e) {
+                        log.error("【马克】数据合并异常: ", e);
+                    }
+                    maxId = list4.get(listSize - 1).getId();
+                    if (listSize < 1000) {
+                        break;
+                    }
                 }
+                log.info("【马克】数据合并完成...");
             } catch (Exception e) {
-                log.error("【八方】异常导致循环跳出, 堆栈信息: ", e);
+                log.error("【马克】异常导致循环跳出, 堆栈信息: ", e);
             }
         });
 
@@ -344,22 +429,66 @@ public class AppInit implements ApplicationRunner {
     }
 
     /** 处理马克数据合并到名单库 */
-    /*public void handleMarkMerge(List<MarkerCompanyData> markRosters) {
+    public void handleMarkMerge(List<MarkerCompanyData> markRosters) {
         List<CompanyRoster> rosters = new ArrayList<>();
         for (MarkerCompanyData markRoster : markRosters) {
             CompanyRoster companyRoster = new CompanyRoster(markRoster.getCompanyName(), markRoster.getCreditCode(), markRoster.getManageState(), markRoster.getUrl(), markRoster.getContactPhone(), "", "", markRoster.getRegisterAddress(), markRoster.getCompanySize(), markRoster.getBusinessScope());
             companyRoster.setMarkProps(markRoster);
             rosters.add(companyRoster);
         }
-        boolean flag = companyRosterService.saveBatch(rosters);
-        if (flag) {
-            List<CompanyRosterSource> list = new ArrayList<>(rosters.size());
-            rosters.forEach(item -> list.add(new CompanyRosterSource(item.getId(), CompanyRosterSourceEnum.MARK)));
-            companyRosterSourceService.saveBatch(list);
-        } else {
-            log.error("【马克数据】批量合并失败, 数据库添加结果为 false, 未出现异常");
+        try {
+            while (true) {
+                try {
+                    boolean flag = companyRosterService.saveBatch(rosters);
+                    if (flag) {
+                        List<CompanyRosterSource> list = new ArrayList<>(rosters.size());
+                        rosters.forEach(item -> list.add(new CompanyRosterSource(item.getId(), CompanyRosterSourceEnum.MARK)));
+                        companyRosterSourceService.saveBatch(list);
+                    } else {
+                        log.error("【马克数据】批量合并失败, 数据库添加结果为 false, 未出现异常");
+                    }
+                    break;
+                } catch (CannotAcquireLockException | DeadlockLoserDataAccessException e) {
+                }
+            }
+        } catch (DuplicateKeyException de) {
+            for (CompanyRoster roster : rosters) {
+                try {
+                    while (true) {
+                        try {
+                            companyRosterService.save(roster);
+                            companyRosterSourceService.save(new CompanyRosterSource(roster.getId(), CompanyRosterSourceEnum.MARK));
+                            break;
+                        } catch (CannotAcquireLockException e) {
+                        }
+                    }
+                } catch (DuplicateKeyException dke) {
+                    try {
+                        CompanyRoster dbRoster = companyRosterService.getByName(roster.getName());
+                        if (dbRoster != null && StringUtils.isNotBlank(dbRoster.getId())) {
+                            roster.setId(dbRoster.getId());
+                            companyRosterService.updateById(roster);
+                        } else {
+                            while (true) {
+                                try {
+                                    companyRosterService.save(roster);
+                                    companyRosterSourceService.save(new CompanyRosterSource(roster.getId(), CompanyRosterSourceEnum.MARK));
+                                    break;
+                                } catch (CannotAcquireLockException e) {
+                                }
+                            }
+                        }
+                    } catch (Exception e) {
+                        log.error("【马克数据】根据企业名称 {} 更新数据失败, 异常堆栈: ", roster.getName(), e);
+                    }
+                } catch (Exception e) {
+                    log.error("【马克数据】企业 {} 插入失败, 异常堆栈: ", roster.getName(), e);
+                }
+            }
+        } catch (Exception e) {
+            log.error("【马克数据】批量插入数据失败, 异常堆栈: ", e);
         }
-    }*/
+    }
 
     /**
      拆分100条/次
