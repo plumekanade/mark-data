@@ -41,6 +41,7 @@ public class AppInit implements ApplicationRunner {
     @Resource
     private ThreadPoolTaskExecutor taskExecutor;
     private final CompanyRosterService companyRosterService;
+    private final CompanyRosterIndustryService companyRosterIndustryService;
     private final CompanyRosterSourceService companyRosterSourceService;
     private final CompanyRosterContactService companyRosterContactService;
     private final BfCompanyRosterService bfCompanyRosterService;
@@ -48,11 +49,44 @@ public class AppInit implements ApplicationRunner {
     private final MarkerCompanyOffDataService markerCompanyOffDataService;
     private final List<String> shortKeys = new ArrayList<>(Arrays.asList("companyName", "manageState", "legalName", "registerCapital", "realCapital", "establishDate", "verifyDate", "businessTerm", "province", "city", "district", "creditCode", "taxpayerCode", "businessRegisterCode", "organizationCode", "insureNum", "companyType", "industry", "previousName", "registerAddress", "url", "contactPhone", "email", "businessScope"));
     private final List<String> longKeys = new ArrayList<>(Arrays.asList("companyName", "engName", "creditCode", "companyType", "manageState", "establishDate", "verifyDate", "legalName", "registerCapital", "realCapital", "insureNum", "companySize", "businessScope", "registerAddress", "businessTerm", "source", "taxpayerCode", "businessRegisterCode", "organizationCode", "contactPhone", "email", "taxpayerCredential", "previousName", "province", "city", "district", "url", "industry", "firstClassify", "secondClassify", "thirdClassify", "registrar", "lon", "lat"));
+    private final static Map<String, String> INDUSTRY_MAP = new HashMap<>(128);
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        // 八方/马克数据合并到名单库
         taskExecutor.submit(() -> {
+            String maxId = "0";
+            int size = 1000;
+            while (true) {
+                List<MarkerCompanyData> markList = markerCompanyDataService.limitList(maxId, size);
+                markList.forEach(markData -> {
+                    String fc = markData.getFirstClassify();
+                    String sc = markData.getSecondClassify();
+                    String tc = markData.getThirdClassify();
+                    String industry = "";
+                    if (StringUtils.isNotBlank(fc)) {
+                        industry += fc;
+                    }
+                    if (StringUtils.isNotBlank(sc)) {
+                        industry += sc;
+                    }
+                    if (StringUtils.isNotBlank(tc)) {
+                        industry += tc;
+                    }
+                    if (INDUSTRY_MAP.get(industry) == null) {
+                        INDUSTRY_MAP.put(industry, industry);
+                        companyRosterIndustryService.save(new CompanyRosterIndustry(fc, sc, tc));
+                    }
+                });
+                if (markList.size() < size) {
+                    break;
+                }
+                maxId = markList.get(markList.size() - 1).getId();
+            }
+
+        });
+
+        // 八方/马克数据合并到名单库
+        /*taskExecutor.submit(() -> {
             int total = 0;
             int size = 1000;
 //            boolean flag = true;
@@ -204,7 +238,7 @@ public class AppInit implements ApplicationRunner {
             } catch (Exception e) {
                 log.error("【马克】异常导致循环跳出, 堆栈信息: ", e);
             }
-        });
+        });*/
 
 
         // 马克数据导入
