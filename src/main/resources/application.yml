@@ -13,9 +13,9 @@ spring:
     deserialization:
       fail-on-unknown-properties: false
   datasource:
-    url: jdbc:mysql://192.168.3.108:3306/17oa?useUnicode=true&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: equipl123456
+    url: jdbc:mysql://192.168.3.11:3306/17oa?useUnicode=true&useSSL=false&useLegacyDatetimeCode=false&serverTimezone=Asia/Shanghai
+    username: 17oa
+    password: 123456
     driver-class-name: com.mysql.cj.jdbc.Driver
     hikari:
       minimum-idle: 10

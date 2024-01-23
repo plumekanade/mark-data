@@ -53,37 +53,37 @@ public class AppInit implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws Exception {
-        taskExecutor.submit(() -> {
-            String maxId = "0";
-            int size = 1000;
-            while (true) {
-                List<MarkerCompanyData> markList = markerCompanyDataService.limitList(maxId, size);
-                markList.forEach(markData -> {
-                    String fc = markData.getFirstClassify();
-                    String sc = markData.getSecondClassify();
-                    String tc = markData.getThirdClassify();
-                    String industry = "";
-                    if (StringUtils.isNotBlank(fc)) {
-                        industry += fc;
-                    }
-                    if (StringUtils.isNotBlank(sc)) {
-                        industry += sc;
-                    }
-                    if (StringUtils.isNotBlank(tc)) {
-                        industry += tc;
-                    }
-                    if (INDUSTRY_MAP.get(industry) == null) {
-                        INDUSTRY_MAP.put(industry, industry);
-                        companyRosterIndustryService.save(new CompanyRosterIndustry(fc, sc, tc));
-                    }
-                });
-                if (markList.size() < size) {
-                    break;
-                }
-                maxId = markList.get(markList.size() - 1).getId();
-            }
-
-        });
+//        taskExecutor.submit(() -> {
+//            String maxId = "0";
+//            int size = 1000;
+//            while (true) {
+//                List<MarkerCompanyData> markList = markerCompanyDataService.limitList(maxId, size);
+//                markList.forEach(markData -> {
+//                    String fc = markData.getFirstClassify();
+//                    String sc = markData.getSecondClassify();
+//                    String tc = markData.getThirdClassify();
+//                    String industry = "";
+//                    if (StringUtils.isNotBlank(fc)) {
+//                        industry += fc;
+//                    }
+//                    if (StringUtils.isNotBlank(sc)) {
+//                        industry += sc;
+//                    }
+//                    if (StringUtils.isNotBlank(tc)) {
+//                        industry += tc;
+//                    }
+//                    if (StringUtils.isNotBlank(intdustry) && INDUSTRY_MAP.get(industry) == null) {
+//                        INDUSTRY_MAP.put(industry, industry);
+//                        companyRosterIndustryService.save(new CompanyRosterIndustry(fc, sc, tc));
+//                    }
+//                });
+//                if (markList.size() < size) {
+//                    break;
+//                }
+//                maxId = markList.get(markList.size() - 1).getId();
+//            }
+//
+//        });
 
         // 八方/马克数据合并到名单库
         /*taskExecutor.submit(() -> {
@@ -242,11 +242,11 @@ public class AppInit implements ApplicationRunner {
 
 
         // 马克数据导入
-        /*taskExecutor.submit(() -> {
+        taskExecutor.submit(() -> {
             // 导入成功后的文件目录
-            String moveDir = "C:\\Users\\equipl\\code\\ImportSuccess\\";
+            String moveDir = "C:\\Users\\equipl\\code\\success\\";
             // 读取数据文件目录
-            File[] files = FileUtil.ls("C:\\Users\\equipl\\code\\全国数据\\" + subPath + "\\");
+            File[] files = FileUtil.ls("C:\\Users\\equipl\\code\\import-data\\" + subPath + "\\");
             String off = "注销";
             String offed = "已注销";
             for (File file : files) {
@@ -259,14 +259,14 @@ public class AppInit implements ApplicationRunner {
                     if (rowIndex == 0) {
                         resultMsg.setShortFlag(rowList.size() < 30);     // true -> 少字段文档  false -> 多字段文档
                     }
-                    if (rowIndex == 0 || "更多数据，尽在“马克数据网”".equals(rowList.get(0)) || resultMsg.getCode() != 0) {
+                    if (rowIndex == 0 || "更多数据，尽在“马克数据网”".equals(rowList.get(0)) || "马克数据网".equals(rowList.get(0)) || resultMsg.getCode() == -1) {
                         log.error("【名单数据】跳过数据行: {}", rowIndex);
                         return;
                     }
 //                    try {
                     Map<String, Object> map = new HashMap<>(rowList.size());
                     for (int j = 0; j < rowList.size(); j++) {
-                        if (j >= shortKeys.size() || j >= longKeys.size()) {
+                        if((resultMsg.isShortFlag() && j >= shortKeys.size()) || (!resultMsg.isShortFlag() && j >= longKeys.size())) {
                             break;
                         }
                         map.put(resultMsg.isShortFlag() ? shortKeys.get(j) : longKeys.get(j), rowList.get(j));
@@ -282,17 +282,18 @@ public class AppInit implements ApplicationRunner {
                         dataItem = MapperUtils.deserialize(data, MarkerCompanyData.class);
                     }
                     if (offDataItem != null && StringUtils.isNotBlank(offDataItem.getCompanyName())) {
+                        offDataItem.handlePropsData();
                         offList.add(offDataItem);
-                        if (offList.size() >= 300) {
+                        if (offList.size() >= 500) {
                             try {
                                 log.info("【注销数据】文档 {} - {} 触发批量插入数据, 结果：{}", file.getName(), rowIndex, markerCompanyOffDataService.saveBatch(offList));
                             } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
                                 taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
-                                log.error("【注销数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
+                                log.info("【注销数据】文档 {} 的 {} ~ {} 行数据 唯一键/主键冲突异常...", file.getName(), rowIndex - 100, rowIndex);
                             } catch (Exception e) {
                                 if (e.toString().contains("BatchUpdateException")) {
                                     taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
-                                    log.error("【注销数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
+                                    log.info("【注销数据】文档 {} 的 {} ~ {} 行数据 唯一键/主键冲突异常...", file.getName(), rowIndex - 100, rowIndex);
                                 } else {
                                     resultMsg.setCode(-1);
                                     log.error("【注销数据】处理数据异常, 堆栈: ", e);
@@ -302,17 +303,18 @@ public class AppInit implements ApplicationRunner {
                             offList.clear();
                         }
                     } else if (dataItem != null && StringUtils.isNotBlank(dataItem.getCompanyName())) {
+                        dataItem.handlePropsData();
                         list.add(dataItem);
-                        if (list.size() >= 300) {
+                        if (list.size() >= 500) {
                             try {
                                 log.info("【名单数据】文档 {} - {} 触发批量插入数据, 结果：{}", file.getName(), rowIndex, markerCompanyDataService.saveBatch(list));
                             } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
                                 taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
-                                log.error("【名单数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
+                                log.info("【名单数据】文档 {} 的 {} ~ {} 行数据 唯一键/主键冲突异常...", file.getName(), rowIndex - 100, rowIndex);
                             } catch (Exception e) {
                                 if (e.toString().contains("BatchUpdateException")) {
                                     taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
-                                    log.error("【名单数据】唯一键/主键冲突异常, {} ~ {} 的数据", rowIndex - 100, rowIndex);
+                                    log.info("【名单数据】文档 {} 的 {} ~ {} 行数据 唯一键/主键冲突异常...", file.getName(), rowIndex - 100, rowIndex);
                                 } else {
                                     resultMsg.setCode(-1);
                                     log.error("【名单数据】处理数据异常, 堆栈: ", e);
@@ -329,13 +331,13 @@ public class AppInit implements ApplicationRunner {
 //                        log.error("【名单数据】处理数据异常, 堆栈: ", e);
 //                    }
                 });
-                if (resultMsg.getCode() == 0) {
+                if (resultMsg.getCode() != -1) {
                     if (!list.isEmpty()) {
                         try {
                             log.info("【名单数据】文件 {} 最后一次批量插入数据, 结果：{}", file.getName(), markerCompanyDataService.saveBatch(list));
                         } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
                             taskExecutor.submit(() -> handleDuplicateKey(new ArrayList<>(list)));
-                            log.error("【名单数据】文件 {} 最后一次批量插入, 唯一键/主键冲突异常", file.getName());
+                            log.info("【名单数据】文件 {} 最后一次批量插入, 唯一键/主键冲突异常", file.getName());
                         }
 //                        log.info("【名单数据】文件 {} 最后一次插入数据......", file.getName());
 //                        handleDuplicateKey(list);
@@ -345,7 +347,7 @@ public class AppInit implements ApplicationRunner {
                             log.info("【注销数据】文件 {} 最后一次批量插入注销数据, 结果：{}", file.getName(), markerCompanyOffDataService.saveBatch(offList));
                         } catch (DuplicateKeyException | DeadlockLoserDataAccessException | CannotAcquireLockException e) {
                             taskExecutor.submit(() -> handleOffDuplicateKey(new ArrayList<>(offList)));
-                            log.error("【注销数据】文件 {} 最后一次批量插入, 唯一键/主键冲突异常", file.getName());
+                            log.info("【注销数据】文件 {} 最后一次批量插入, 唯一键/主键冲突异常", file.getName());
                         }
 //                        log.info("【注销数据】文件 {} 最后一次插入数据......", file.getName());
 //                        handleOffDuplicateKey(offList);
@@ -361,7 +363,7 @@ public class AppInit implements ApplicationRunner {
             }
 
             log.info("【名单导入】文件夹内数据已全部导入...");
-        });*/
+        });
     }
 
     /** 处理八方数据合并到名单库 */
@@ -529,21 +531,21 @@ public class AppInit implements ApplicationRunner {
      */
     public void handleDuplicateKey(List<MarkerCompanyData> dataList) {
 //        taskExecutor.submit(() -> handleSubDuplicateKey(dataList));
-        handleSubDuplicateKey(dataList);
+//        handleSubDuplicateKey(dataList);
 
-//        List<MarkerCompanyData> subList = new ArrayList<>();
-//        dataList.forEach(data -> {
-//            subList.add(data);
-//            if (subList.size() >= 100) {
-////                taskExecutor.submit(() -> handleSubDuplicateKey(new ArrayList<>(subList)));
-//                handleSubDuplicateKey(subList);
-//                subList.clear();
-//            }
-//        });
-//        if (!subList.isEmpty()) {
-////            taskExecutor.submit(() -> handleSubDuplicateKey(subList));
-//            handleSubDuplicateKey(subList);
-//        }
+        List<MarkerCompanyData> subList = new ArrayList<>();
+        dataList.forEach(data -> {
+            subList.add(data);
+            if (subList.size() >= 100) {
+//                taskExecutor.submit(() -> handleSubDuplicateKey(new ArrayList<>(subList)));
+                handleSubDuplicateKey(subList);
+                subList.clear();
+            }
+        });
+        if (!subList.isEmpty()) {
+//            taskExecutor.submit(() -> handleSubDuplicateKey(subList));
+            handleSubDuplicateKey(subList);
+        }
     }
 
     public void handleSubDuplicateKey(List<MarkerCompanyData> subList) {
@@ -568,6 +570,7 @@ public class AppInit implements ApplicationRunner {
                         updateList.add(sub);
                     } else {
                         sub.setId(null);
+                        markerCompanyDataService.save(sub);
 //                        markerCompanyDataService.getBaseMapper().insertData(sub.getCompanyName(), sub.getEngName(), sub.getManageState(), sub.getLegalName(), sub.getRegisterCapital(), sub.getRealCapital(), sub.getEstablishDate(), sub.getVerifyDate(), sub.getBusinessTerm(), sub.getProvince(), sub.getCity(), sub.getDistrict(), sub.getRegistrar(), sub.getCreditCode(), sub.getTaxpayerCode(), sub.getBusinessRegisterCode(), sub.getOrganizationCode(), sub.getTaxpayerCredential(), sub.getInsureNum(), sub.getCompanyType(), sub.getPreviousName(), sub.getRegisterAddress(), sub.getUrl(), sub.getContactPhone(), sub.getEmail(), sub.getBusinessScope(), sub.getCompanySize(), sub.getSource(), sub.getIndustry(), sub.getFirstClassify(), sub.getSecondClassify(), sub.getThirdClassify(), sub.getLon(), sub.getLat());
                         map.put(sub.getCompanyName(), sub.getId());
                     }
@@ -590,13 +593,13 @@ public class AppInit implements ApplicationRunner {
                         } catch (DuplicateKeyException dke) {
                             dbData = markerCompanyDataService.getOne(wrapper);
                             if (dbData == null) {
-                                log.error("【注销数据】主键/唯一键重复, 二次查询还是 null ？？？！！！");
+                                log.error("【名单数据】主键/唯一键重复, 二次查询还是 null ？？？！！！");
                             } else {
                                 sub.setId(dbData.getId());
                                 updateList.add(sub);
                             }
                         } catch (Exception ex) {
-                            log.error("【注销数据】死锁循环插入异常, 堆栈信息: ", ex);
+                            log.error("【名单数据】死锁循环插入异常, 堆栈信息: ", ex);
                         }
                         log.error("【名单数据】数据 {} 结束死锁循环.....", sub.getCompanyName());
                         break;
@@ -636,21 +639,21 @@ public class AppInit implements ApplicationRunner {
      */
     public void handleOffDuplicateKey(List<MarkerCompanyOffData> dataList) {
 //        taskExecutor.submit(() -> handleOffSubDuplicateKey(dataList));
-        handleOffSubDuplicateKey(dataList);
+//        handleOffSubDuplicateKey(dataList);
 
-//        List<MarkerCompanyOffData> subList = new ArrayList<>();
-//        dataList.forEach(data -> {
-//            subList.add(data);
-//            if (subList.size() >= 100) {
-////                taskExecutor.submit(() -> handleOffSubDuplicateKey(new ArrayList<>(subList)));
-//                handleOffSubDuplicateKey(subList);
-//                subList.clear();
-//            }
-//        });
-//        if (!subList.isEmpty()) {
-////            taskExecutor.submit(() -> handleOffSubDuplicateKey(subList));
-//            handleOffSubDuplicateKey(subList);
-//        }
+        List<MarkerCompanyOffData> subList = new ArrayList<>();
+        dataList.forEach(data -> {
+            subList.add(data);
+            if (subList.size() >= 100) {
+//                taskExecutor.submit(() -> handleOffSubDuplicateKey(new ArrayList<>(subList)));
+                handleOffSubDuplicateKey(subList);
+                subList.clear();
+            }
+        });
+        if (!subList.isEmpty()) {
+//            taskExecutor.submit(() -> handleOffSubDuplicateKey(subList));
+            handleOffSubDuplicateKey(subList);
+        }
     }
 
     public void handleOffSubDuplicateKey(List<MarkerCompanyOffData> subList) {

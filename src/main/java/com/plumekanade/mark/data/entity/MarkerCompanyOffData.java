@@ -2,6 +2,8 @@ package com.plumekanade.mark.data.entity;
 
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.core.toolkit.StringUtils;
+import com.plumekanade.mark.data.consts.ProjectConst;
 import lombok.Data;
 
 import java.io.Serial;
@@ -87,4 +89,53 @@ public class MarkerCompanyOffData implements Serializable {
     private String lon;
     /** 纬度 */
     private String lat;
+    private Integer dataState = 0;
+
+    /** 处理特殊转义符号 */
+    public void handlePropsData() {
+        this.companyName = handleStr(this.companyName);
+        this.engName = handleStr(this.engName);
+        this.manageState = handleStr(this.manageState);
+        this.legalName = handleStr(this.legalName);
+        this.registerCapital = handleStr(this.registerCapital);
+        this.realCapital = handleStr(this.realCapital);
+        this.establishDate = handleStr(this.establishDate);
+        this.verifyDate = handleStr(this.verifyDate);
+        this.businessTerm = handleStr(this.businessTerm);
+        this.province = handleStr(this.province);
+        this.city = handleStr(this.city);
+        this.district = handleStr(this.district);
+        this.registrar = handleStr(this.registrar);
+        this.taxpayerCode = handleStr(this.taxpayerCode);
+        this.creditCode = handleStr(this.creditCode);
+        this.businessRegisterCode = handleStr(this.businessRegisterCode);
+        this.organizationCode = handleStr(this.organizationCode);
+        this.taxpayerCredential = handleStr(this.taxpayerCredential);
+        this.insureNum = handleStr(this.insureNum);
+        this.companyType = handleStr(this.companyType);
+        this.previousName = handleStr(this.previousName);
+        this.registerAddress = handleStr(this.registerAddress);
+        this.url = handleStr(this.url);
+        this.contactPhone = handleStr(this.contactPhone);
+        this.email = handleStr(this.email);
+        this.businessScope = handleStr(this.businessScope);
+        this.companySize = handleStr(this.companySize);
+        this.source = handleStr(this.source);
+        this.industry = handleStr(this.industry);
+        this.firstClassify = handleStr(this.firstClassify);
+        this.secondClassify = handleStr(this.secondClassify);
+        this.thirdClassify = handleStr(this.thirdClassify);
+        this.lon = handleStr(this.lon);
+        this.lat = handleStr(this.lat);
+    }
+
+    public String handleStr(String str) {
+        if (StringUtils.isNotBlank(str)) {
+            str = str.replaceAll(ProjectConst.B_SPACE, ProjectConst.NO_STR).replaceAll(ProjectConst.SPACE, ProjectConst.NO_STR).replaceAll(ProjectConst.WRAP, ProjectConst.NO_STR);
+        }
+        if ("-".equals(str)) {
+            str = null;
+        }
+        return str;
+    }
 }
